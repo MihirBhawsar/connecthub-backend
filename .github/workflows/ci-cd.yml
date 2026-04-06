@@ -41,7 +41,7 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: config.settings.development
-      DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
+      DJANGO_SECRET_KEY: gz@r=qv!+g$k+e0q!$l==-$x9xiz(&!&+n_k3cf(9zkadu-6uj
       DEBUG: "True"
       ALLOWED_HOSTS: localhost,127.0.0.1
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_connecthub
