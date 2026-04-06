@@ -1,0 +1,73 @@
+# ==============================================================
+# ConnectHub .gitignore
+# ==============================================================
+
+# Environment — NEVER commit secrets
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Pytest / test artifacts
+.pytest_cache/
+.tox/
+.nox/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+docker-compose.override.yml
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Mypy / type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Node (if frontend is ever added)
+node_modules/
+npm-debug.log*
+
+# AWS credentials — NEVER commit
+*.pem
+*.key
