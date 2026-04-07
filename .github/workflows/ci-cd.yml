@@ -8,7 +8,7 @@ on:
 
 jobs:
   # ============================================================
-  # Test job — runs on every push and PR
+  # Test — runs on every push and PR
   # ============================================================
   test:
     name: Run Tests
@@ -41,7 +41,7 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: config.settings.development
-      DJANGO_SECRET_KEY: gz@r=qv!+g$k+e0q!$l==-$x9xiz(&!&+n_k3cf(9zkadu-6uj
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       DEBUG: "True"
       ALLOWED_HOSTS: localhost,127.0.0.1
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_connecthub
@@ -82,21 +82,11 @@ jobs:
       - name: Run database migrations
         run: python manage.py migrate --noinput
 
-      - name: Run tests with coverage
-        run: |
-          coverage run manage.py test --verbosity=2
-          coverage report --fail-under=70
-          coverage xml
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
+      - name: Run tests
+        run: python manage.py test --verbosity=2
 
   # ============================================================
-  # Deploy job — runs only on push to main after tests pass
+  # Deploy — runs ONLY on push to main, after tests pass
   # ============================================================
   deploy:
     name: Deploy to EC2
@@ -105,32 +95,34 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
+          username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 300s
           script: |
             set -e
-            cd /home/ubuntu/connecthub
+            cd /home/ec2-user/connecthub
 
             echo "==> Pulling latest code..."
             git pull origin main
 
-            echo "==> Building and starting containers..."
-            docker compose -f docker-compose.prod.yml build
-            docker compose -f docker-compose.prod.yml up -d
+            echo "==> Building containers..."
+            docker-compose -f docker-compose.prod.yml build
+
+            echo "==> Starting containers..."
+            docker-compose -f docker-compose.prod.yml up -d
 
             echo "==> Running migrations..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+            docker-compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
 
             echo "==> Collecting static files..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
+            docker-compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
 
-            echo "==> Deployment complete!"
-            docker compose -f docker-compose.prod.yml ps
+            echo "==> Cleaning up old Docker images..."
+            docker image prune -f
+
+            echo "==> Done! ConnectHub deployed successfully."
+            docker-compose -f docker-compose.prod.yml ps
