@@ -10,9 +10,14 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from django.conf.urls.static import static
 
+from apps.core.views import HealthCheckView
+
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
+
+    # Health check — public liveness probe
+    path("api/v1/health/", HealthCheckView.as_view(), name="health-check"),
 
     # Users (auth + profile) — single namespace "users"
     path("api/v1/", include("apps.users.urls", namespace="users")),

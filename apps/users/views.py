@@ -9,7 +9,7 @@ import logging
 
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import generics, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -107,7 +107,16 @@ class ChangePasswordView(APIView):
 # ---------------------------------------------------------------------------
 
 
-@extend_schema(tags=["Users"])
+@extend_schema(
+    tags=["Auth"],
+    summary="Current authenticated user",
+    description=(
+        "Returns the full profile of the user identified by the Bearer access token. "
+        "Use this in Swagger to verify which account is currently logged in. "
+        "PATCH to update bio, avatar, website, or privacy settings."
+    ),
+    responses={200: UserProfileSerializer},
+)
 class MeView(generics.RetrieveUpdateAPIView):
     """
     GET  /api/v1/users/me/ — retrieve own profile

@@ -1,83 +1,136 @@
-# ConnectHub — Project Commands Reference
+# ConnectHub — Commands Reference
+
+> All commands run from the project root (`~/Project/Python/Project/connecthub`).
+> The `WARN: variable is not set` messages are harmless — Docker just substituting empty strings for unused compose variables.
 
 ---
 
-## First-Time Setup
+## Start
 
 ```bash
-# 1. Copy env file
-cp .env.example .env
-
-# 2. Build all containers
-docker compose build
-
-# 3. Start database + redis first
-docker compose up -d db redis
-
-# 4. Run migrations
-docker compose run --rm web python manage.py migrate
-
-# 5. Create superuser
-docker compose run --rm web python manage.py createsuperuser
-
-# 6. Start everything
-docker compose up -d
-```
-
----
-
-## Start Project
-
-```bash
-# Start all services (background)
+# Start all services in background
 docker compose up -d
 
-# Start with live logs
+# Start and watch logs in terminal (Ctrl+C to stop watching, containers keep running)
 docker compose up
 ```
 
 ---
 
-## Stop Project
+## Stop
 
 ```bash
-# Stop all containers (keeps data)
+# Stop all containers (data is preserved)
 docker compose down
 
-# Stop + delete database volume (full reset)
+# Stop and wipe all volumes — full reset (loses DB data)
 docker compose down -v
+```
+
+---
+
+## After Code Changes (rebuild required)
+
+```bash
+# Rebuild image + restart all containers
+docker compose up -d --build
+
+# Rebuild only the web service (faster if only app code changed)
+docker compose up -d --build web
 ```
 
 ---
 
 ## Migrations
 
+> Containers must be running. Run `docker compose up -d` first if not started.
+
 ```bash
-# Create migrations after model changes
+# 1. Create migration files after model changes
 docker compose exec web python manage.py makemigrations
 
-# Apply migrations
+# 2. Apply all pending migrations
 docker compose exec web python manage.py migrate
 
-# Show migration status
+# Check migration status (see what is applied / pending)
 docker compose exec web python manage.py showmigrations
 
-# Roll back one migration in an app
+# Roll back to a specific migration (example: posts app to 0001)
 docker compose exec web python manage.py migrate posts 0001
 ```
 
 ---
 
-## Database
+## Logs
 
 ```bash
-# Access PostgreSQL shell
+# Django / Daphne server logs (live, follow)
+docker compose logs -f web
+
+# Celery worker logs
+docker compose logs -f celery
+
+# Celery beat scheduler logs
+docker compose logs -f celery-beat
+
+# Database logs
+docker compose logs -f db
+
+# All services at once
+docker compose logs -f
+
+# Last 100 lines only (no follow)
+docker compose logs --tail=100 web
+```
+
+---
+
+## Container Status
+
+```bash
+# See all container states (running / exited / healthy)
+docker compose ps
+
+# Restart only the web container (e.g. after a config change)
+docker compose restart web
+
+# Restart celery worker
+docker compose restart celery
+```
+
+---
+
+## Django Management
+
+```bash
+# Django interactive shell
+docker compose exec web python manage.py shell
+
+# Create superuser
+docker compose exec web python manage.py createsuperuser
+
+# Collect static files
+docker compose exec web python manage.py collectstatic --noinput
+
+# Check for configuration errors
+docker compose exec web python manage.py check
+
+# List all registered URL routes
+docker compose exec web python manage.py show_urls
+```
+
+---
+
+## Database Shell
+
+```bash
+# Open psql inside the db container
 docker compose exec db psql -U connecthub_user -d connecthub
 
-# Inside psql — useful commands
-\dt            # list tables
-\d posts_post  # describe a table
-\q             # quit
+# Useful psql commands:
+#   \dt          — list all tables
+#   \d tablename — describe a table
+#   \q           — quit
 ```
 
 ---
@@ -88,13 +141,10 @@ docker compose exec db psql -U connecthub_user -d connecthub
 # All tests
 docker compose exec web python manage.py test
 
-# Specific app
+# Single app
 docker compose exec web python manage.py test apps.users
 docker compose exec web python manage.py test apps.posts
 docker compose exec web python manage.py test apps.notifications
-
-# With verbosity
-docker compose exec web python manage.py test --verbosity=2
 
 # With coverage
 docker compose exec web bash -c "coverage run manage.py test && coverage report"
@@ -102,135 +152,104 @@ docker compose exec web bash -c "coverage run manage.py test && coverage report"
 
 ---
 
-## Logs
-
-```bash
-docker compose logs -f web      # Django/Daphne logs
-docker compose logs -f celery   # Celery worker logs
-docker compose logs -f db       # PostgreSQL logs
-docker compose logs -f redis    # Redis logs
-```
-
----
-
-## Django Management
-
-```bash
-# Django shell
-docker compose exec web python manage.py shell
-
-# Collect static files
-docker compose exec web python manage.py collectstatic --noinput
-
-# Check for errors (no DB needed)
-docker compose exec web python manage.py check
-
-# View all URL routes
-docker compose exec web python manage.py show_urls
-```
-
----
-
-## Container Status
-
-```bash
-docker compose ps           # see all container states
-docker compose restart web  # restart just the web server
-```
-
----
-
 ## Quick Reference
 
-| Action      | Command                                              |
-|-------------|------------------------------------------------------|
-| Start       | `docker compose up -d`                               |
-| Stop        | `docker compose down`                                |
-| Full reset  | `docker compose down -v`                             |
-| Migrate     | `docker compose exec web python manage.py migrate`   |
-| Shell       | `docker compose exec web python manage.py shell`     |
-| Logs        | `docker compose logs -f web`                         |
-| Tests       | `docker compose exec web python manage.py test`      |
+| Action                  | Command                                                       |
+|-------------------------|---------------------------------------------------------------|
+| Start                   | `docker compose up -d`                                        |
+| Stop                    | `docker compose down`                                         |
+| Rebuild after changes   | `docker compose up -d --build`                                |
+| Full reset (wipe DB)    | `docker compose down -v`                                      |
+| Make migrations         | `docker compose exec web python manage.py makemigrations`     |
+| Apply migrations        | `docker compose exec web python manage.py migrate`            |
+| Logs (web)              | `docker compose logs -f web`                                  |
+| Logs (all)              | `docker compose logs -f`                                      |
+| Status                  | `docker compose ps`                                           |
+| Shell                   | `docker compose exec web python manage.py shell`              |
+| Tests                   | `docker compose exec web python manage.py test`               |
 
 ---
 
-## Production Server (EC2)
+## Local URLs
 
-### 1. SSH into server
+| URL                             | Description              |
+|---------------------------------|--------------------------|
+| http://localhost:8000/api/docs/ | Swagger UI               |
+| http://localhost:8000/api/redoc/| ReDoc                    |
+| http://localhost:8000/admin/    | Django Admin             |
+| http://localhost:5555/          | Flower (Celery monitor)  |
+
+---
+
+## Production (EC2)
+
+> EC2 uses **`docker-compose`** (v1, with hyphen) — not `docker compose`.
 
 ```bash
+# SSH in
 ssh -i "Mihir_ubuntu_laptop.pem" ec2-user@ec2-13-51-238-168.eu-north-1.compute.amazonaws.com
-```
 
-> Make sure `Mihir_ubuntu_laptop.pem` is in your current directory, or provide the full path.
-
-### 2. Go to project folder
-
-```bash
+# Go to project
 cd connecthub-backend
-```
 
-### 3. Pull latest code
-
-```bash
+# Pull latest code
 git pull origin main
 ```
 
-### 4. Start project (production)
+### Start
 
 ```bash
 # Start all containers in background
 docker-compose -f docker-compose.prod.yml up -d
 
-# Start with rebuild (after code changes)
+# Rebuild + restart (after any code change)
 docker-compose -f docker-compose.prod.yml up -d --build
 
 # Start nginx (if not running)
 sudo systemctl start nginx
 ```
 
-### 5. Stop project (production)
+### Stop
 
 ```bash
-# Stop all containers (keeps data)
+# Stop all containers (data preserved)
 docker-compose -f docker-compose.prod.yml down
 
 # Stop nginx
 sudo systemctl stop nginx
 ```
 
-### 6. Check status
+### Migrations
 
 ```bash
-# Container status
-docker-compose -f docker-compose.prod.yml ps
-
-# Live logs
-docker-compose -f docker-compose.prod.yml logs -f web
+docker-compose -f docker-compose.prod.yml exec web python manage.py makemigrations
+docker-compose -f docker-compose.prod.yml exec web python manage.py migrate
 ```
 
----
+### Logs
 
-## URLs — Local
+```bash
+# Web / Daphne
+docker-compose -f docker-compose.prod.yml logs -f web
 
-| URL                              | Description       |
-|----------------------------------|-------------------|
-| http://localhost:8000/api/docs/  | Swagger UI        |
-| http://localhost:8000/api/redoc/ | ReDoc             |
-| http://localhost:8000/admin/     | Django Admin      |
-| http://localhost:5555/           | Flower (Celery)   |
+# All services
+docker-compose -f docker-compose.prod.yml logs -f
 
----
+# Last 100 lines
+docker-compose -f docker-compose.prod.yml logs --tail=100 web
+```
 
-## URLs — Production (EC2)
+### Status
 
-| URL                                                                      | Description       |
-|--------------------------------------------------------------------------|-------------------|
-| http://13.51.238.168:8001/api/docs/                                      | Swagger UI        |
-| http://13.51.238.168:8001/api/redoc/                                     | ReDoc             |
-| http://13.51.238.168:8001/admin/                                         | Django Admin      |
-| http://ec2-13-51-238-168.eu-north-1.compute.amazonaws.com/api/docs/     | Swagger (via nginx, port 80) |
-| http://ec2-13-51-238-168.eu-north-1.compute.amazonaws.com/admin/        | Admin (via nginx, port 80)   |
-| http://13.51.238.168/api/docs/                                           | Swagger (via nginx, IP)      |
+```bash
+docker-compose -f docker-compose.prod.yml ps
+sudo systemctl status nginx
+```
 
-> Note: Port 8001 is direct access (recommended). Port 80 routes via nginx.
+### Production URLs
+
+| URL                                                              | Description           |
+|------------------------------------------------------------------|-----------------------|
+| http://13.51.238.168:8001/api/docs/                              | Swagger (direct)      |
+| http://13.51.238.168:8001/admin/                                 | Admin (direct)        |
+| http://ec2-13-51-238-168.eu-north-1.compute.amazonaws.com/api/docs/ | Swagger (via nginx) |
