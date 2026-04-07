@@ -24,10 +24,14 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
 # ---------------------------------------------------------------------------
-# CORS
+# CORS / CSRF
 # ---------------------------------------------------------------------------
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
+
+# Required by Django 4.0+ — without this, browser POST requests get 403.
+# Must include the full scheme + host (e.g. http://ec2-xx.compute.amazonaws.com)
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 
 # ---------------------------------------------------------------------------
 # Static files (WhiteNoise or S3)
