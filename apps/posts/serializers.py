@@ -177,7 +177,7 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ["id", "author", "post", "parent", "body", "replies", "created_at"]
-        read_only_fields = ["id", "author", "created_at"]
+        read_only_fields = ["id", "author", "post", "created_at"]
 
     def get_replies(self, obj: Comment) -> list:
         """Return one level of nested replies for top-level comments only."""

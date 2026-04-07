@@ -122,6 +122,8 @@ class CommentViewTest(APITestCase):
         self.assertEqual(self.post.comments_count, 1)
 
     def test_delete_own_comment_returns_204(self):
+        self.post.comments_count = 1
+        self.post.save(update_fields=["comments_count"])
         comment = CommentFactory(author=self.user, post=self.post)
         url = reverse("posts:comment-delete", kwargs={"pk": comment.pk})
         response = self.client.delete(url)

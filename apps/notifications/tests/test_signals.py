@@ -45,7 +45,7 @@ class LikeNotificationTest(TestCase):
 class FollowNotificationTest(TestCase):
 
     @patch("apps.users.signals.get_channel_layer")
-    @patch("apps.users.signals.send_follow_notification_email")
+    @patch("apps.users.tasks.send_follow_notification_email")
     def test_follow_creates_notification(self, mock_email, mock_channel_layer):
         mock_channel_layer.return_value = None
         follower = UserFactory()
