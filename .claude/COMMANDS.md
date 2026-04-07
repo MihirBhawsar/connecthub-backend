@@ -154,7 +154,64 @@ docker compose restart web  # restart just the web server
 
 ---
 
-## URLs
+## Production Server (EC2)
+
+### 1. SSH into server
+
+```bash
+ssh -i "Mihir_ubuntu_laptop.pem" ec2-user@ec2-13-51-238-168.eu-north-1.compute.amazonaws.com
+```
+
+> Make sure `Mihir_ubuntu_laptop.pem` is in your current directory, or provide the full path.
+
+### 2. Go to project folder
+
+```bash
+cd connecthub-backend
+```
+
+### 3. Pull latest code
+
+```bash
+git pull origin main
+```
+
+### 4. Start project (production)
+
+```bash
+# Start all containers in background
+docker-compose -f docker-compose.prod.yml up -d
+
+# Start with rebuild (after code changes)
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# Start nginx (if not running)
+sudo systemctl start nginx
+```
+
+### 5. Stop project (production)
+
+```bash
+# Stop all containers (keeps data)
+docker-compose -f docker-compose.prod.yml down
+
+# Stop nginx
+sudo systemctl stop nginx
+```
+
+### 6. Check status
+
+```bash
+# Container status
+docker-compose -f docker-compose.prod.yml ps
+
+# Live logs
+docker-compose -f docker-compose.prod.yml logs -f web
+```
+
+---
+
+## URLs — Local
 
 | URL                              | Description       |
 |----------------------------------|-------------------|
@@ -162,3 +219,18 @@ docker compose restart web  # restart just the web server
 | http://localhost:8000/api/redoc/ | ReDoc             |
 | http://localhost:8000/admin/     | Django Admin      |
 | http://localhost:5555/           | Flower (Celery)   |
+
+---
+
+## URLs — Production (EC2)
+
+| URL                                                                      | Description       |
+|--------------------------------------------------------------------------|-------------------|
+| http://13.51.238.168:8001/api/docs/                                      | Swagger UI        |
+| http://13.51.238.168:8001/api/redoc/                                     | ReDoc             |
+| http://13.51.238.168:8001/admin/                                         | Django Admin      |
+| http://ec2-13-51-238-168.eu-north-1.compute.amazonaws.com/api/docs/     | Swagger (via nginx, port 80) |
+| http://ec2-13-51-238-168.eu-north-1.compute.amazonaws.com/admin/        | Admin (via nginx, port 80)   |
+| http://13.51.238.168/api/docs/                                           | Swagger (via nginx, IP)      |
+
+> Note: Port 8001 is direct access (recommended). Port 80 routes via nginx.
