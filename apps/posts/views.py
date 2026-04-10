@@ -73,14 +73,12 @@ class FeedView(generics.ListAPIView):
         # Attempt cache hit
         cached_ids = cache.get(cache_key)
         if cached_ids is not None:
-            # Re-fetch from DB using cached ID list to get fresh serializable objects
-            preserved_order = {pk: idx for idx, pk in enumerate(cached_ids)}
-            qs = (
+            # Re-fetch from DB using cached ID list; paginator applies ordering.
+            return (
                 Post.objects.filter(id__in=cached_ids)
                 .select_related("author")
                 .prefetch_related("hashtags", "likes")
             )
-            return sorted(qs, key=lambda p: preserved_order.get(p.pk, 0))
 
         blocked_ids = _get_blocked_ids(user)
         following_ids = user.following.values_list("following_id", flat=True)

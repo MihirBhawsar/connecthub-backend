@@ -17,6 +17,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.core.pagination import StandardPagePagination
 from apps.core.throttling import AuthRateThrottle, LoginRateThrottle
@@ -39,6 +40,13 @@ User = get_user_model()
 # ---------------------------------------------------------------------------
 # Auth Views
 # ---------------------------------------------------------------------------
+
+
+@extend_schema(tags=["Auth"])
+class LoginView(TokenObtainPairView):
+    """Obtain JWT access + refresh token pair. Strict rate limit: 5/min."""
+
+    throttle_classes = [LoginRateThrottle]
 
 
 @extend_schema(tags=["Auth"])

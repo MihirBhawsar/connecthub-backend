@@ -10,6 +10,7 @@ import logging
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.postgres.search import SearchVector
+from django.db import connection
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
@@ -117,7 +118,13 @@ def notify_on_comment(sender, instance: Comment, created: bool, **kwargs) -> Non
 
 @receiver(post_save, sender=Post)
 def update_search_vector(sender, instance: Post, created: bool, **kwargs) -> None:
-    """Update the search_vector field whenever a post's caption changes."""
+    """Update the search_vector field whenever a post's caption changes.
+
+    Skipped on non-PostgreSQL backends (e.g. SQLite in tests) because
+    SearchVector relies on the to_tsvector PostgreSQL function.
+    """
+    if connection.vendor != "postgresql":
+        return
     if kwargs.get("update_fields") and "search_vector" in kwargs["update_fields"]:
         # Avoid recursion — skip if we're already updating the search vector
         return
