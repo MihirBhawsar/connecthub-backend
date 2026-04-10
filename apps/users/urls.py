@@ -4,7 +4,7 @@ All patterns are mounted at /api/v1/ from config/urls.py.
 This single module keeps namespace="users" unified so reverse() works consistently.
 """
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from . import views
 
@@ -15,7 +15,7 @@ urlpatterns = [
     # Auth endpoints  →  /api/v1/auth/*
     # ----------------------------------------------------------------
     path("auth/register/", views.RegisterView.as_view(), name="register"),
-    path("auth/login/", TokenObtainPairView.as_view(), name="login"),
+    path("auth/login/", views.LoginView.as_view(), name="login"),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("auth/logout/", views.LogoutView.as_view(), name="logout"),
     path("auth/password/change/", views.ChangePasswordView.as_view(), name="password_change"),
