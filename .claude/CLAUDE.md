@@ -23,6 +23,16 @@
 
 ## 🔁 Workflow Rules
 
+### Git Branching & PR Workflow
+- **Branch flow**: `feature/*` → `develop` → `main` (always via PR, never direct push)
+- When user asks to push/deploy, follow this sequence:
+  1. Commit changes on the current feature branch
+  2. Push the feature branch to origin
+  3. Create a PR from the feature branch → `develop`
+  4. Once merged to `develop`, create a PR from `develop` → `main`
+- Never push directly to `develop` or `main`
+- Use `gh` CLI to create PRs (authenticated via token)
+
 ### When creating a new file
 - Check if a similar file already exists first — never duplicate
 - Always follow the exact app structure from `CONNECTHUB_CLAUDE_CODE_PROMPT.md`
